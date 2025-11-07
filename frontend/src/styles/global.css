@@ -1,4 +1,7 @@
 @import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
 
 :root {
   font-family: Poppins, sans-serif;
@@ -13,24 +16,25 @@
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   --radius: 0.625rem;
-  --background: #fffaf3;
+  --background: #FFFFFF;
   --foreground: oklch(0.145 0 0);
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.145 0 0);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.145 0 0);
-  --primary: #1a4134;
-  --primary-foreground: oklch(0.985 0 0);
-  --primary-hover: #29765C;
-  --secondary: #916e5a;
+  --primary: #1E6091;
+  --primary-foreground: #FFFFFF;
+  --primary-hover: #003C6A;
+  --text-primary: #282828;
+  --secondary: #A7D0E2;
   --secondary-foreground: oklch(0.205 0 0);
   --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(55.553% 0.00006 271.152);
-  --accent: #EDEDED;
+  --muted-foreground: oklch(0.556 0 0);
+  --accent: #E6E6E6;
   --accent-foreground: #717171;
   --destructive: oklch(0.577 0.245 27.325);
   --border: oklch(0.922 0 0);
-  --input: #1a4134;
+  --input: oklch(0.922 0 0); 
   --ring: oklch(0.708 0 0);
   --chart-1: oklch(0.646 0.222 41.116);
   --chart-2: oklch(0.6 0.118 184.704);
@@ -39,17 +43,39 @@
   --chart-5: oklch(0.769 0.188 70.08);
   --sidebar: oklch(0.985 0 0);
   --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-primary: #113755;
+  --sidebar-primary-foreground: #FFFFFF;
   --sidebar-accent: oklch(0.97 0 0);
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
-  --sidebar-scroll-track: #1a4134;
-  --sidebar-scroll-thumb: #2d5a49;
-  --sidebar-scroll-thumb-hover: #3f7a64;
-  --sidebar-scroll-thumb-active: #2c5f4d;
+  --sidebar-scroll-track: #113755;
+  --sidebar-scroll-thumb: #366F9B;
+  --sidebar-scroll-thumb-hover: #154C75;
+  --sidebar-scroll-thumb-active: #324E64;
 }
+
+/* Primary */
+.bg-primary { background-color: var(--primary-hex, var(--color-primary)); }
+.text-primary-foreground { color: var(--primary-foreground-hex, var(--color-primary-foreground)); }
+.hover\:bg-primary:hover { background-color: var(--primary-hex, var(--color-primary)); }
+
+/* Sidebar */
+.bg-sidebar { background-color: var(--sidebar-hex, var(--color-sidebar)); }
+.text-sidebar-foreground { color: var(--sidebar-foreground-hex, var(--color-sidebar-foreground)); }
+.bg-sidebar-border { background-color: var(--sidebar-hex, var(--color-sidebar-border)); }
+
+/* Background / foreground */
+.bg-background { background-color: var(--background-hex, var(--color-background)); }
+.text-foreground { color: var(--foreground-hex, var(--color-foreground)); }
+
+/* Muted / input / border */
+.text-muted-foreground { color: var(--color-muted-foreground); }
+.bg-input { background-color: var(--color-input); }
+.border-input { border-color: var(--color-input); }
+
+/* Small helpers for selection and scrollbars */
+::selection { background: var(--color-primary); color: var(--color-primary-foreground); }
 
 a {
   font-weight: 500;
@@ -78,6 +104,7 @@ body {
   --color-primary: var(--primary);
   --color-primary-hover: var(--primary-hover);
   --color-primary-foreground: var(--primary-foreground);
+  --color-text-primary: var(--text-primary);
   --color-secondary: var(--secondary);
   --color-secondary-foreground: var(--secondary-foreground);
   --color-muted: var(--muted);
@@ -123,10 +150,10 @@ body {
     --sidebar-accent-foreground: oklch(0.205 0 0);
     --sidebar-border: oklch(0.922 0 0);
     --sidebar-ring: oklch(0.708 0 0);
-    --sidebar-scroll-track: #1a4134;
-    --sidebar-scroll-thumb: #2d5a49;
-    --sidebar-scroll-thumb-hover: #3f7a64;
-    --sidebar-scroll-thumb-active: #2c5f4d;
+    --sidebar-scroll-track: #113755;
+    --sidebar-scroll-thumb: #366F9B;
+    --sidebar-scroll-thumb-hover: #154C75;
+    --sidebar-scroll-thumb-active: #324E64;
   }
 }
 
