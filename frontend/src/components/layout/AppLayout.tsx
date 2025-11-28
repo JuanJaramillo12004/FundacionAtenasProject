@@ -23,6 +23,7 @@ import {
   HelpCircle,
   LogOut,
   ChevronRight,
+  User,
 } from "lucide-react";
 import { Outlet, Link, useLocation } from "react-router-dom";
 import {
@@ -33,7 +34,8 @@ import {
 import type { ReactNode } from "react";
 import FullScreenLoader from "@/components/common/FullScreenLoader";
 import FullScreenError from "@/components/common/FullScreenError";
-import { RawRole } from "@/lib/roles";
+import { RawRole, getRoleLabel, normalizeRawRole } from "@/lib/roles";
+import { useAuth } from "@/hooks/useAuth";
 import * as React from "react";
 
 type SubMenuItem = {
@@ -57,8 +59,8 @@ const adminItems: MenuItem[] = [
     id: "inicio",
     label: "Inicio",
     icon: <LineChart />,
-    href: "/app/dashboard",
-  }
+    href: "/app",
+  },
 ];
 
 const directorItems: MenuItem[] = [
@@ -66,8 +68,14 @@ const directorItems: MenuItem[] = [
     id: "inicio",
     label: "Inicio",
     icon: <LineChart />,
-    href: "/app/dashboard",
-  }
+    href: "/app",
+  },
+  {
+    id: "perfil",
+    label: "Perfil",
+    icon: <User />,
+    href: "/app/profile",
+  },
 ];
 
 const donatorItems: MenuItem[] = [
@@ -75,8 +83,14 @@ const donatorItems: MenuItem[] = [
     id: "inicio",
     label: "Inicio",
     icon: <LineChart />,
-    href: "/app/dashboard",
-  }
+    href: "/app",
+  },
+  {
+    id: "perfil",
+    label: "Perfil",
+    icon: <User />,
+    href: "/app/profile",
+  },
 ];
 
 const bottomItems: MenuItem[] = [
@@ -97,20 +111,26 @@ function SidebarAutoClose() {
   return null;
 }
 
-const user = {
-    name: "Usuario de Ejemplo",
-    email: "usuario@example.com",
-    role: "ADMIN"
-};
-
-const error = null;
-
 function AppLayoutContent() {
+  const { user, isLoading, signOut } = useAuth();
   const location = useLocation();
 
-  // Determinar qué menú mostrar según el rol del usuario
+  if (isLoading) {
+    return <FullScreenLoader message="Cargando tu información..." />;
+  }
+
+  if (!user) {
+    return <FullScreenError message="No se encontró una sesión activa." />;
+  }
+
+  const meta = user.user_metadata ?? {};
+  const metaRole =
+    typeof meta["role"] === "string" ? (meta["role"] as string) : undefined;
+  const raw = (user.role as string | undefined) ?? metaRole;
+  const role = normalizeRawRole(raw);
+
   const getMenuItems = (): MenuItem[] => {
-    switch (user.role) {
+    switch (role) {
       case RawRole.ADMIN:
         return adminItems;
       case RawRole.DIRECTOR:
@@ -124,8 +144,9 @@ function AppLayoutContent() {
 
   const menuItems = getMenuItems();
 
-  const handleLogout = () => {
-    // logout({ logoutParams: { returnTo: window.location.origin } });
+  const handleLogout = async () => {
+    await signOut();
+    window.location.href = "/login";
   };
 
   const isActive = (href: string) => {
@@ -135,35 +156,23 @@ function AppLayoutContent() {
     }
     return location.pathname.startsWith(href);
   };
-
-  if (status === "idle" || status === "loading") {
-    return <FullScreenLoader message="Estamos dejando todo listo para ti!" />;
-  }
-  if (status === "error") {
-    return (
-      <FullScreenError
-        message={
-          error ||
-          "No pudimos cargar tu rol. Por favor intenta más tarde o recarga la página."
-        }
-      />
-    );
-  }
-
+  const roleLabel = getRoleLabel(user.role ?? "DONATOR");
+    
   return (
     <SidebarProvider>
       <SidebarAutoClose />
       <Sidebar
         className="bg-primary text-primary-foreground"
-
         collapsible="offcanvas"
       >
         {/* Header */}
         <SidebarHeader className="p-4 bg-primary">
           <div className="flex items-center gap-3">
             <div className="leading-tight">
-              <div className="text-base font-semibold"></div>
-              <div className="text-xs opacity-80"></div>
+              <div className="text-base font-semibold">
+                {user.user_metadata.username ?? "Usuario"}
+              </div>
+              <div className="text-xs opacity-80">{roleLabel}</div>
             </div>
           </div>
           <SidebarSeparator className="my-4 bg-white/20" />
@@ -179,10 +188,7 @@ function AppLayoutContent() {
               <SidebarMenu>
                 {menuItems.map((item) =>
                   item.submenu ? (
-                    <Collapsible
-                      key={item.id}
-                      className="group/collapsible"
-                    >
+                    <Collapsible key={item.id} className="group/collapsible">
                       <SidebarMenuItem>
                         <CollapsibleTrigger asChild>
                           <SidebarMenuButton className="text-base h-12 px-3 rounded-lg hover:bg-white/10 data-[state=open]:bg-white/20 data-[state=open]:font-semibold data-[state=open]:text-white">
@@ -257,17 +263,8 @@ function AppLayoutContent() {
                   className="h-12 px-3 rounded-lg hover:bg-white/10"
                   onClick={item.id === "logout" ? handleLogout : undefined}
                 >
-                  {item.id === "logout" ? (
-                    <>
-                      <LogOut />
-                      <span>Cerrar sesión</span>
-                    </>
-                  ) : (
-                    <>
-                      {item.icon}
-                      <span>{item.label}</span>
-                    </>
-                  )}
+                  {item.icon}
+                  <span>{item.label}</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
             ))}

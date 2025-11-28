@@ -30,7 +30,7 @@ const Home = () => {
           <Popover>
             <PopoverTrigger asChild>
               <Button className="bg-secondary/55 hover:bg-secondary/45 text-primary-foreground px-6 py-2 rounded-lg font-medium shadow-md hover:shadow-lg transition-all duration-200">
-                Acceder
+                Soy un Donador
                 <ChevronDown className="h-4 w-4 ml-2" />
               </Button>
             </PopoverTrigger>

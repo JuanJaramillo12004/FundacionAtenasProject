@@ -1,6 +1,7 @@
 import { Navigate } from "react-router-dom";
 import FullScreenLoader from "@/components/common/FullScreenLoader";
 import { useAuth } from "@/hooks/useAuth";
+import { normalizeRawRole } from "@/lib/roles";
 
 const ProtectedRoute = ({
   allowedRoles,
@@ -20,9 +21,14 @@ const ProtectedRoute = ({
   }
 
   if (allowedRoles && allowedRoles.length > 0) {
-    const userRole = user.user_metadata?.role || user?.role;
+    const meta = user.user_metadata as Record<string, unknown> | undefined;
+    const metaRole =
+      typeof meta?.["role"] === "string" ? (meta["role"] as string) : undefined;
 
-    if (!userRole || !allowedRoles.includes(userRole)) {
+    const raw = (user?.role as string | undefined) ?? metaRole;
+    const normalized = raw ? normalizeRawRole(raw) : undefined;
+
+    if (!normalized || !allowedRoles.includes(normalized)) {
       return <Navigate to="/" replace />;
     }
   }

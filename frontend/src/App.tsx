@@ -12,6 +12,7 @@ import Register from "./app/routes/Register";
 import Dashboard from "@/app/routes/Dashboard/Dashboard";
 
 import { RawRole } from "./lib/roles";
+import Profile from "@/app/routes/Profile/Profile";
 
 function App() {
   return (
@@ -24,19 +25,40 @@ function App() {
           <Route path="register" element={<Register />} />
 
           {/* Rutas protegidas - requieren autenticación */}
-          <Route 
-            path="app" 
+          <Route
+            path="app/"
             element={
-              <ProtectedRoute allowedRoles={[RawRole.ADMIN, RawRole.DONATOR]}>
+              <ProtectedRoute allowedRoles={[RawRole.ADMIN, RawRole.DONATOR, RawRole.DIRECTOR]}>
                 <AppLayout />
               </ProtectedRoute>
             }
           >
-            {/* Dashboard como ruta index (sin path o con index) */}
-            <Route index element={<Dashboard />} />
-            
+            <Route
+              index
+              element={
+                <ProtectedRoute
+                  allowedRoles={[
+                    RawRole.ADMIN,
+                    RawRole.DIRECTOR,
+                    RawRole.DONATOR,
+                  ]}
+                >
+                  <Dashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="profile"
+              element={
+                <ProtectedRoute
+                  allowedRoles={[RawRole.DIRECTOR, RawRole.DONATOR]}
+                >
+                  <Profile />
+                </ProtectedRoute>
+              }
+            />
+
             {/* Otras rutas hijas aquí */}
-            {/* <Route path="profile" element={<Profile />} /> */}
             {/* <Route path="settings" element={<Settings />} /> */}
           </Route>
 

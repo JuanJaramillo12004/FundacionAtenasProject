@@ -1,9 +1,10 @@
 import { GenericForm } from "@/components/forms/GenericForm";
 import { type FieldConfig } from "@/models/types/forms.type";
-import { client } from "@/api/supabase/client";
-import { RawRole } from "@/lib/roles";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
+import { createUserSchema } from "@/models/schemas/user.schema";
+import { validateClient } from "@/lib/zodUtils";
+import { authService, userService } from "@/api/services";
 
 export default function Register() {
   const navigate = useNavigate();
@@ -48,15 +49,6 @@ export default function Register() {
     {
       title: "Seguridad",
       fields: {
-        role: {
-          label: "Rol",
-          type: "select",
-          options: [
-            { value: RawRole.ADMIN, label: "Administrador" },
-            { value: RawRole.DIRECTOR, label: "Director" },
-            { value: RawRole.DONATOR, label: "Donador" },
-          ],
-        },
         password: {
           label: "Contraseña",
           type: "password",
@@ -68,73 +60,70 @@ export default function Register() {
 
   const handleRegister = async (data: Record<string, string>) => {
     try {
-      // Crear usuario en Supabase Auth
-      const { data: authData, error: authError } = await client.auth.signUp({
-        email: data.email,
-        password: data.password,
-        options: {
-          data: {
-            first_name: data.first_name,
-            last_name: data.last_name,
-            birthdate: data.birthdate,
-            username: data.username,
-            phone: data.phone,
-            role: data.role,
-          },
-        },
+      const validation = validateClient(createUserSchema, {
+        ...data,
+        role: "DONATOR",
       });
 
-      if (authError) {
-        toast.error("Error al crear usuario", {
-          description: authError.message,
+      if (!validation.success) {
+        toast.error("Datos inválidos", {
+          description: validation.error,
         });
         return;
       }
 
-      // Guardar datos adicionales en la base de datos
-      const { error: dbError } = await client.from("user").insert([
+      if (!validation.data) {
+        toast.error("Error en la validación", {
+          description: "Los datos validados no están disponibles",
+        });
+        return;
+      }
+
+      const validatedData = validation.data;
+
+      const authData = await authService.signUp(
+        validatedData.email,
+        validatedData.password,
         {
-          id: authData.user?.id,
-          first_name: data.first_name,
-          last_name: data.last_name,
-          birthdate: data.birthdate,
-          username: data.username,
-          phone: data.phone,
-          email: data.email,
-          role: data.role,
-        },
-      ]);
+          first_name: validatedData.first_name,
+          last_name: validatedData.last_name,
+          birthdate: validatedData.birthdate,
+          username: validatedData.username,
+          phone: validatedData.phone,
+          role: validatedData.role ?? "DONATOR",
+          emailRedirectTo: `${window.location.origin}/app`,
+        }
+      );
 
-      if (dbError) {
-        toast.error("Error al guardar datos adicionales", {
-          description: dbError.message,
+      if (authData.user) {
+        await userService.create({
+          id: authData.user.id,
+          first_name: validatedData.first_name,
+          last_name: validatedData.last_name,
+          birthdate: validatedData.birthdate,
+          username: validatedData.username,
+          phone: validatedData.phone,
+          email: validatedData.email,
+          role: validatedData.role ?? "DONATOR",
         });
-        return;
-      }
 
-      // Hacer login automático
-      const { error: loginError } = await client.auth.signInWithPassword({
-        email: data.email,
-        password: data.password,
-      });
+        if (!authData.session) {
+          toast.info("¡Registro exitoso!", {
+            description: "Por favor revisa tu correo para confirmar tu cuenta",
+            duration: 5000,
+          });
+          navigate("/login");
+          return;
+        }
 
-      if (loginError) {
-        toast.error("Registro exitoso pero error al iniciar sesión", {
-          description: "Por favor inicia sesión manualmente",
+        toast.success("¡Registro exitoso!", {
+          description: "Bienvenido a Fundación Atenas",
         });
-        navigate("/login");
-        return;
+
+        setTimeout(() => {
+          navigate("/app");
+        }, 500);
       }
-
-      // Mostrar mensaje de éxito y redirigir
-      toast.success("¡Registro exitoso!", {
-        description: "Bienvenido a Fundación Atenas",
-      });
-
-      // Redirigir al dashboard
-      setTimeout(() => {
-        navigate("/app");
-      }, 500);
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       toast.error("Error inesperado", {

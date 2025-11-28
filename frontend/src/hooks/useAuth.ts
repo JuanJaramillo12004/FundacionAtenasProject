@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
-import { client } from "@/api/supabase/client";
 import type { User } from "@supabase/supabase-js";
-import type { RawRole } from "@/lib/roles";
+import { normalizeRawRole, type RawRole } from "@/lib/roles";
+import { authService, userService } from "@/api/services";
 
 interface UserWithRole extends User {
   role?: RawRole;
@@ -12,66 +12,60 @@ export const useAuth = () => {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const checkAuth = async () => {
+    const initSession = async () => {
       try {
-        const {
-          data: { session },
-        } = await client.auth.getSession();
+        const session = await authService.getSession();
 
         if (session?.user) {
-          const { data: userData, error } = await client
-            .from("user")
-            .select("role")
-            .eq("id", session.user.id)
-            .single();
+          // Intentar obtener el rol desde la tabla "user" usando el servicio
+          const role = await userService.getUserRole(session.user.id);
 
-          if (!error && userData) {
-            setUser({ ...session.user, role: userData.role as RawRole });
-          } else {
-            setUser({ ...session.user, role: undefined });
-          }
+          const meta = session.user.user_metadata ?? {};
+          const metaRole =
+            typeof meta["role"] === "string" ? (meta["role"] as string) : undefined;
+
+          const finalRole = role
+            ? (normalizeRawRole(role as string) as RawRole)
+            : (normalizeRawRole(metaRole) as RawRole);
+
+          setUser({ ...session.user, role: finalRole });
         } else {
           setUser(null);
         }
-      } catch (error) {
-        console.error("Error al verificar autenticación:", error);
+      } catch (err) {
+        console.error("Error cargando sesión:", err);
         setUser(null);
       } finally {
         setIsLoading(false);
       }
     };
 
-    checkAuth();
+    initSession();
 
+    // Escucha cambios de autenticación
     const {
       data: { subscription },
-    } = client.auth.onAuthStateChange(async (_event, session) => {
+    } = authService.onAuthStateChange((_event, session) => {
       if (session?.user) {
-        // Obtener el rol del usuario desde la base de datos
-        const { data: userData, error } = await client
-          .from("user")
-          .select("role")
-          .eq("id", session.user.id)
-          .single();
+        const meta = session.user.user_metadata ?? {};
+        const metaRole =
+          typeof meta["role"] === "string" ? (meta["role"] as string) : undefined;
 
-        if (!error && userData) {
-          setUser({ ...session.user, role: userData.role as RawRole });
-        } else {
-          setUser({ ...session.user, role: undefined });
-        }
+        setUser({
+          ...session.user,
+          role: normalizeRawRole(metaRole),
+        });
       } else {
         setUser(null);
       }
       setIsLoading(false);
     });
 
-    return () => {
-      subscription.unsubscribe();
-    };
+    return () => subscription.unsubscribe();
   }, []);
 
   const signOut = async () => {
-    await client.auth.signOut();
+    await authService.signOut();
     setUser(null);
   };
 

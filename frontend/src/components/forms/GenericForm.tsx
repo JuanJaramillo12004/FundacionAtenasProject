@@ -48,6 +48,7 @@ export const GenericForm = ({
 }: GenericFormProps) => {
   const methods = useForm();
   const [step, setStep] = useState(0);
+  const [datePopoverOpen, setDatePopoverOpen] = useState<Record<string, boolean>>({});
 
   const totalSteps = steps ? steps.length : 1;
   const currentStep: StepConfig = steps
@@ -103,7 +104,13 @@ export const GenericForm = ({
                   <FormItem key={key}>
                     <Label htmlFor={key}>{config.label}</Label>
                     {config.type === "date" ? (
-                      <Popover>
+                      <Popover 
+                        key={`popover-${key}`}
+                        open={datePopoverOpen[key] || false}
+                        onOpenChange={(open) => 
+                          setDatePopoverOpen(prev => ({ ...prev, [key]: open }))
+                        }
+                      >
                         <PopoverTrigger asChild>
                           <Button
                             variant="outline"
@@ -138,6 +145,7 @@ export const GenericForm = ({
                                 key,
                                 date ? date.toISOString() : ""
                               );
+                              setDatePopoverOpen(prev => ({ ...prev, [key]: false }));
                             }}
                           />
                         </PopoverContent>
