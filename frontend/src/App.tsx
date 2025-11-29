@@ -9,6 +9,8 @@ import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import Home from "@/app/routes/Home";
 import Login from "@/app/routes/Login";
 import Register from "./app/routes/Register";
+import AuthCallback from "@/app/routes/AuthCallback";
+import CompleteProfile from "@/app/routes/CompleteProfile";
 import Dashboard from "@/app/routes/Dashboard/Dashboard";
 
 import { RawRole } from "./lib/roles";
@@ -23,6 +25,8 @@ function App() {
           <Route path="/" element={<Home />} />
           <Route path="login" element={<Login />} />
           <Route path="register" element={<Register />} />
+          <Route path="auth/callback" element={<AuthCallback />} />
+          <Route path="complete-profile" element={<CompleteProfile />} />
 
           {/* Rutas protegidas - requieren autenticación */}
           <Route

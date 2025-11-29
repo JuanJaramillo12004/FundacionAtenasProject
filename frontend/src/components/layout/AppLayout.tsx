@@ -34,7 +34,7 @@ import {
 import type { ReactNode } from "react";
 import FullScreenLoader from "@/components/common/FullScreenLoader";
 import FullScreenError from "@/components/common/FullScreenError";
-import { RawRole, getRoleLabel, normalizeRawRole } from "@/lib/roles";
+import { RawRole, getRoleLabel } from "@/lib/roles";
 import { useAuth } from "@/hooks/useAuth";
 import * as React from "react";
 
@@ -123,11 +123,7 @@ function AppLayoutContent() {
     return <FullScreenError message="No se encontró una sesión activa." />;
   }
 
-  const meta = user.user_metadata ?? {};
-  const metaRole =
-    typeof meta["role"] === "string" ? (meta["role"] as string) : undefined;
-  const raw = (user.role as string | undefined) ?? metaRole;
-  const role = normalizeRawRole(raw);
+  const role = user.role ?? RawRole.DONATOR;
 
   const getMenuItems = (): MenuItem[] => {
     switch (role) {
@@ -156,7 +152,9 @@ function AppLayoutContent() {
     }
     return location.pathname.startsWith(href);
   };
-  const roleLabel = getRoleLabel(user.role ?? "DONATOR");
+
+  const roleLabel = getRoleLabel(role);
+  const displayName = user.username ?? user.first_name ?? user.email?.split('@')[0] ?? "Usuario";
     
   return (
     <SidebarProvider>
@@ -170,7 +168,7 @@ function AppLayoutContent() {
           <div className="flex items-center gap-3">
             <div className="leading-tight">
               <div className="text-base font-semibold">
-                {user.user_metadata.username ?? "Usuario"}
+                {displayName}
               </div>
               <div className="text-xs opacity-80">{roleLabel}</div>
             </div>

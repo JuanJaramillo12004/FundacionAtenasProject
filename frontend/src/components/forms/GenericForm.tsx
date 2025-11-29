@@ -35,6 +35,7 @@ type GenericFormProps = {
   fields?: Record<string, FieldConfig>;
   steps?: StepConfig[];
   onSubmit: (data: Record<string, string>) => void;
+  onSubmitWithProvider?: () => void;
   onForgotPassword?: () => void;
 };
 
@@ -44,11 +45,14 @@ export const GenericForm = ({
   fields,
   steps,
   onSubmit,
+  onSubmitWithProvider,
   onForgotPassword,
 }: GenericFormProps) => {
   const methods = useForm();
   const [step, setStep] = useState(0);
-  const [datePopoverOpen, setDatePopoverOpen] = useState<Record<string, boolean>>({});
+  const [datePopoverOpen, setDatePopoverOpen] = useState<
+    Record<string, boolean>
+  >({});
 
   const totalSteps = steps ? steps.length : 1;
   const currentStep: StepConfig = steps
@@ -104,11 +108,14 @@ export const GenericForm = ({
                   <FormItem key={key}>
                     <Label htmlFor={key}>{config.label}</Label>
                     {config.type === "date" ? (
-                      <Popover 
+                      <Popover
                         key={`popover-${key}`}
                         open={datePopoverOpen[key] || false}
-                        onOpenChange={(open) => 
-                          setDatePopoverOpen(prev => ({ ...prev, [key]: open }))
+                        onOpenChange={(open) =>
+                          setDatePopoverOpen((prev) => ({
+                            ...prev,
+                            [key]: open,
+                          }))
                         }
                       >
                         <PopoverTrigger asChild>
@@ -145,7 +152,10 @@ export const GenericForm = ({
                                 key,
                                 date ? date.toISOString() : ""
                               );
-                              setDatePopoverOpen(prev => ({ ...prev, [key]: false }));
+                              setDatePopoverOpen((prev) => ({
+                                ...prev,
+                                [key]: false,
+                              }));
                             }}
                           />
                         </PopoverContent>
@@ -249,7 +259,11 @@ export const GenericForm = ({
                     </div>
 
                     <div className="grid grid-cols-1">
-                      <Button variant="outline" className="w-full">
+                      <Button
+                        variant="outline"
+                        className="w-full"
+                        onClick={onSubmitWithProvider}
+                      >
                         <FaGoogle />
                         <span className="text-sm">Google</span>
                       </Button>

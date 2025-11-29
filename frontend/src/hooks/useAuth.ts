@@ -5,7 +5,29 @@ import { authService, userService } from "@/api/services";
 
 interface UserWithRole extends User {
   role?: RawRole;
+  username?: string;
+  first_name?: string;
+  last_name?: string;
 }
+
+// Enriquece el usuario de Supabase con datos de la base de datos
+const enrichUserWithDBData = async (supabaseUser: User): Promise<UserWithRole> => {
+  const dbUser = await userService.getById(supabaseUser.id);
+  const meta = supabaseUser.user_metadata ?? {};
+  const metaRole = typeof meta["role"] === "string" ? meta["role"] : undefined;
+
+  const finalRole = dbUser?.role
+    ? (normalizeRawRole(dbUser.role as string) as RawRole)
+    : (normalizeRawRole(metaRole) as RawRole);
+
+  return {
+    ...supabaseUser,
+    role: finalRole,
+    username: dbUser?.username,
+    first_name: dbUser?.first_name,
+    last_name: dbUser?.last_name,
+  };
+};
 
 export const useAuth = () => {
   const [user, setUser] = useState<UserWithRole | null>(null);
@@ -17,18 +39,8 @@ export const useAuth = () => {
         const session = await authService.getSession();
 
         if (session?.user) {
-          // Intentar obtener el rol desde la tabla "user" usando el servicio
-          const role = await userService.getUserRole(session.user.id);
-
-          const meta = session.user.user_metadata ?? {};
-          const metaRole =
-            typeof meta["role"] === "string" ? (meta["role"] as string) : undefined;
-
-          const finalRole = role
-            ? (normalizeRawRole(role as string) as RawRole)
-            : (normalizeRawRole(metaRole) as RawRole);
-
-          setUser({ ...session.user, role: finalRole });
+          const enrichedUser = await enrichUserWithDBData(session.user);
+          setUser(enrichedUser);
         } else {
           setUser(null);
         }
@@ -45,16 +57,19 @@ export const useAuth = () => {
     // Escucha cambios de autenticación
     const {
       data: { subscription },
-    } = authService.onAuthStateChange((_event, session) => {
+    } = authService.onAuthStateChange(async (_event, session) => {
       if (session?.user) {
-        const meta = session.user.user_metadata ?? {};
-        const metaRole =
-          typeof meta["role"] === "string" ? (meta["role"] as string) : undefined;
-
-        setUser({
-          ...session.user,
-          role: normalizeRawRole(metaRole),
-        });
+        try {
+          const enrichedUser = await enrichUserWithDBData(session.user);
+          setUser(enrichedUser);
+        } catch (err) {
+          console.error("Error actualizando usuario:", err);
+          const meta = session.user.user_metadata ?? {};
+          setUser({
+            ...session.user,
+            role: normalizeRawRole(meta["role"] as string | undefined),
+          });
+        }
       } else {
         setUser(null);
       }

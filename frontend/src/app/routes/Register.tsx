@@ -1,10 +1,12 @@
 import { GenericForm } from "@/components/forms/GenericForm";
-import { type FieldConfig } from "@/models/types/forms.type";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { createUserSchema } from "@/models/schemas/user.schema";
 import { validateClient } from "@/lib/zodUtils";
-import { authService, userService } from "@/api/services";
+import { authService } from "@/api/services";
+import { createUserInDB } from "@/lib/userHelpers";
+import { getErrorMessage, handleValidationError } from "@/lib/errorHandler";
+import { PERSONAL_INFO_FIELDS, ACCOUNT_INFO_FIELDS, PASSWORD_FIELD } from "@/constants/formFields";
 
 export default function Register() {
   const navigate = useNavigate();
@@ -12,49 +14,15 @@ export default function Register() {
   const steps = [
     {
       title: "Datos personales",
-      fields: {
-        first_name: { label: "Nombre", type: "text", placeholder: "Tu nombre" },
-        last_name: {
-          label: "Apellido",
-          type: "text",
-          placeholder: "Tu apellido",
-        },
-        birthdate: {
-          label: "Fecha de nacimiento",
-          type: "date",
-          placeholder: "Tu fecha de nacimiento",
-        },
-      } as Record<string, FieldConfig>,
+      fields: PERSONAL_INFO_FIELDS,
     },
     {
       title: "Datos de cuenta",
-      fields: {
-        username: {
-          label: "Nombre de usuario",
-          type: "text",
-          placeholder: "usuario123",
-        },
-        email: {
-          label: "Correo electrónico",
-          type: "email",
-          placeholder: "tu@ejemplo.com",
-        },
-        phone: {
-          label: "Teléfono",
-          type: "tel",
-          placeholder: "+57 300 123 4567",
-        },
-      } as Record<string, FieldConfig>,
+      fields: ACCOUNT_INFO_FIELDS,
     },
     {
       title: "Seguridad",
-      fields: {
-        password: {
-          label: "Contraseña",
-          type: "password",
-          placeholder: "••••••••",
-        },
-      } as Record<string, FieldConfig>,
+      fields: PASSWORD_FIELD,
     },
   ];
 
@@ -66,9 +34,7 @@ export default function Register() {
       });
 
       if (!validation.success) {
-        toast.error("Datos inválidos", {
-          description: validation.error,
-        });
+        handleValidationError(validation.error, toast);
         return;
       }
 
@@ -90,21 +56,19 @@ export default function Register() {
           birthdate: validatedData.birthdate,
           username: validatedData.username,
           phone: validatedData.phone,
-          role: validatedData.role ?? "DONATOR",
+          role: "DONATOR",
           emailRedirectTo: `${window.location.origin}/app`,
         }
       );
 
       if (authData.user) {
-        await userService.create({
-          id: authData.user.id,
+        await createUserInDB(authData.user.id, {
           first_name: validatedData.first_name,
           last_name: validatedData.last_name,
           birthdate: validatedData.birthdate,
           username: validatedData.username,
           phone: validatedData.phone,
           email: validatedData.email,
-          role: validatedData.role ?? "DONATOR",
         });
 
         if (!authData.session) {
@@ -125,9 +89,8 @@ export default function Register() {
         }, 500);
       }
     } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
       toast.error("Error inesperado", {
-        description: message || "Ocurrió un error inesperado",
+        description: getErrorMessage(error),
       });
     }
   };

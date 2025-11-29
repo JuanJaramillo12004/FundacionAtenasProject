@@ -43,6 +43,17 @@ export const authService = {
     return data;
   },
 
+  // Inicia sesión con un proveedor externo (Google)
+  async signInWithProvider() {
+    const { error } = await client.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback`,
+      },
+    });
+    if (error) throw error;
+  },
+
   // Cierra la sesión del usuario actual
   async signOut() {
     const { error } = await client.auth.signOut();
